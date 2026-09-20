@@ -18,7 +18,7 @@ export default function Home() {
   const handleUploadComplete = async (base64Image : string) => {
 
     const newId = Date.now().toString(); 
-    navigate(`/visualizer/${newId}`)
+    navigate(`/visualizer /${newId}`)
 
     return true;
   }
