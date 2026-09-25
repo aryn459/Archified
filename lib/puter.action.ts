@@ -1,7 +1,6 @@
 import puter from "@heyputer/puter.js";
 import { getOrCreateHostingConfig, uploadImageToHosting } from "./puter.hosting";
 import { isHostedUrl } from "./utils";
-import { UndoIcon } from "lucide-react";
 
 export const signIn = async () => await puter.auth.signIn();
 
