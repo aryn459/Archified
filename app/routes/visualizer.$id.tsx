@@ -1,32 +1,48 @@
-import { useLocation, useNavigate } from "react-router"
+import { useNavigate, useOutletContext, useParams } from "react-router"
 import { useEffect, useRef, useState } from "react";
 import { generate3DView } from "../../lib/ai.action";
 import { Box, Download, Share2, RefreshCcw, X} from "lucide-react";
 import { Button } from "../../components/ui/button";
+import { createProject, getProjectById } from "../../lib/puter.action";
 
 //dynamic route
 const VisualizerId = () => {
+  const {id} = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const {initialImage, initialRender, name} = location.state || {}
+  const {userId} = useOutletContext<AuthContext>();
 
   const hasInitiallyGenerated = useRef(false);
 
+  const [project, setProject] = useState<DesignItem | null>(null);
+  const [isProjectLoading, setisProjectLoading] = useState(true); 
   const [isProcessing, setIsProcessing]= useState(false);
-  const [currentImage, setCurrentImage] = useState<string | null>(initialRender || null);
+  const [currentImage, setCurrentImage] = useState<string | null>(null);
 
   const handleBack = () => navigate('/');
-  const runGeneration = async () => {
-    if(!initialImage)return;
+  const runGeneration = async (item: DesignItem) => {
+    if(!id || !item.sourceImage)return;
 
     try{
       setIsProcessing(true);
-      const result = await generate3DView({sourceImage: initialImage});
+      const result = await generate3DView({sourceImage: item.sourceImage});
 
       if(result.renderedImage){
         setCurrentImage(result.renderedImage);
+        const updatedItem = {
+          ...item, 
+          renderedImage: result.renderedImage,
+          renderPath: result.renderedPath,
+          timestamp: Date.now(),
+          ownerId: item.ownerId ?? userId ?? null,
+          isPublic: item.isPublic ?? false,
+        }
 
-        //update project into the database with rendered image
+        const saved = await createProject({item: updatedItem, visibility: "private"});
+
+        if(saved){
+          setProject(saved);
+          setCurrentImage(saved.renderedImage || result.renderedImage);
+        }
       }
     }catch (error){
       console.error('Generation Failed', error);
@@ -35,18 +51,51 @@ const VisualizerId = () => {
     }
   }
 
-  useEffect(()=>{
-    if(!initialImage || hasInitiallyGenerated.current) return ;
+  useEffect(() => {
+    let isMounted = true;
 
-    if(initialImage){
-      setCurrentImage(initialRender);
+    const loadProject = async () => {
+      if(!id){
+        setisProjectLoading(false);
+        return;
+      }
+
+      setisProjectLoading(true);
+
+      const fetchedProject = await getProjectById({id});
+
+      if(!isMounted) return;
+
+      setProject(fetchedProject);
+      setCurrentImage(fetchedProject?.renderedImage || null);
+      setisProjectLoading(false);
+      hasInitiallyGenerated.current = false;
+    };
+
+    loadProject();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  useEffect(()=> {
+    if(
+      isProjectLoading ||
+      hasInitiallyGenerated.current ||
+      !project?.sourceImage
+    )
+      return;
+
+    if(project.renderedImage){
+      setCurrentImage(project.renderedImage);
       hasInitiallyGenerated.current = true;
       return;
     }
 
     hasInitiallyGenerated.current = true;
-    runGeneration();
-  }, [initialImage, initialRender])
+    void runGeneration(project);
+  }, [project, isProjectLoading]);
 
   return (
     <div className="visualizer">
@@ -67,7 +116,7 @@ const VisualizerId = () => {
           <div className="panel-header"> 
             <div className="panel-meta">
               <p>Project</p>
-              <h2>{'Untitled Project'}</h2>
+              <h2>{project?.name || `Residence ${id}`}</h2>
               <p className="note">Created by you</p>
               <div>
                 <div className="panel-actions">
@@ -91,8 +140,8 @@ const VisualizerId = () => {
                   <img src={currentImage} alt="AI render" className="render-img"/>
                 ): (
                   <div className="render-placeholder">
-                    {initialImage && (
-                      <img src={initialImage} alt="Original" className="render-fallback"/>
+                    {project?.sourceImage && (
+                      <img src={project?.sourceImage} alt="Original" className="render-fallback"/>
                     )}
                   </div>
                 )}
