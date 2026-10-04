@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { generate3DView } from "../../lib/ai.action";
 import { Box, Download, Share2, RefreshCcw, X} from "lucide-react";
 import { Button } from "../../components/ui/button";
-import { createProject, getProjectById } from "../../lib/puter.action";
+import { createProject, getProjectById, shareProject, unshareProject } from "../../lib/puter.action";
 import { ReactCompareSlider, ReactCompareSliderImage } from "react-compare-slider";
 
 //dynamic route
@@ -18,8 +18,21 @@ const VisualizerId = () => {
   const [isProjectLoading, setisProjectLoading] = useState(true); 
   const [isProcessing, setIsProcessing]= useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   const handleBack = () => navigate('/');
+
+  const handleShareToggle = async () => {
+    if (!project?.id || isSharing) return;
+
+    setIsSharing(true);
+    const updated = project.isPublic
+      ? await unshareProject(project.id)
+      : await shareProject(project.id);
+
+    if (updated) setProject(updated);
+    setIsSharing(false);
+  };
 
   const handleExport = () => {
     if(!currentImage) return;
@@ -135,15 +148,15 @@ const VisualizerId = () => {
                 <div className="panel-actions">
                   <Button 
                     size="sm"
-                    onClick={() => {}}
+                    onClick={handleExport}
                     className="export"
                     disabled= {!currentImage}
                   >
                     <Download className="w-4 h-4 mr-2"/> Export
                   </Button>
-                  <Button size="sm" onClick={()=>{}} className="share">
+                  <Button size="sm" onClick={handleShareToggle} className="share" disabled={!project || isSharing}>
                     <Share2 className="w-4 h-4 mr-2"></Share2>
-                    Share
+                    {isSharing ? 'Saving...' : project?.isPublic ? 'Unshare' : 'Share'}
                   </Button>
                 </div>
               </div>

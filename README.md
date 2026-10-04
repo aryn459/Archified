@@ -1,47 +1,98 @@
 # Archified
 
-**Archified** is a web-based floor plan visualization tool that transforms traditional 2D floor plans into an interactive **3D-style visual overlay**.
+Archified is a web app that turns uploaded 2D floor plans into AI-generated 3D-style architectural renders.
 
-The project is designed to make architectural layouts easier to understand by giving users a more immersive way to explore spaces, rooms, walls, and their relationships within a floor plan.
+Users can sign in with Puter, upload a floor plan image, generate a rendered version, compare the original and rendered images, export the result, and share or unshare projects.
 
 ## Tech Stack
 
-### React
+- React
+- TypeScript
+- React Router
+- Vite
+- Tailwind CSS
+- Puter.js
+- Puter Workers
+- Puter KV storage
+- Gemini image generation through Puter AI
 
-Used to build the interactive user interface through reusable and modular components.
+## Features
 
-### TypeScript
+- User authentication with Puter
+- Floor plan image upload
+- AI-generated 3D-style render
+- Before/after image comparison slider
+- Project history
+- Export rendered image
+- Share and unshare projects between private and public KV storage
 
-Provides type safety and structured development across the application, particularly for floor-plan data, geometry, and UI components.
+## Getting Started
 
-### Vite
+Install dependencies:
 
-Used as the development and build tool, providing a fast development environment and efficient production builds.
-
-### React Router
-
-Handles client-side routing and navigation between different views and sections of the application.
-
-### Puter.js
-
-Provides cloud and AI-oriented capabilities that can be integrated into Archified for features such as data storage, authentication, and intelligent floor-plan workflows.
-
-## Concept
-
-Archified focuses on turning a flat floor plan into a more visual experience:
-
-```text
-2D Floor Plan
-      ↓
-Floor Plan Data
-      ↓
-Visual Processing
-      ↓
-3D-Style Overlay
+```bash
+npm install
 ```
 
-The aim is to create a simple and intuitive way to visualize architectural spaces directly in the browser.
+Create a `.env` file and add your Puter worker URL:
 
-## Project
+```bash
+VITE_PUTER_WORKER_URL=https://your-worker-url
+```
 
-**Archified** — visualizing floor plans beyond the 2D perspective.
+Run the development server:
+
+```bash
+npm run dev
+```
+
+Build for production:
+
+```bash
+npm run build
+```
+
+Run type checks:
+
+```bash
+npm run typecheck
+```
+
+## Project Structure
+
+```text
+app/
+  routes/              App pages and routes
+components/            Reusable UI components
+lib/                   Puter, AI, hosting, and utility logic
+public/                Static assets
+type.d.ts              Shared TypeScript types
+```
+
+## Main Flow
+
+```text
+User uploads floor plan
+        ↓
+Image is stored with Puter hosting
+        ↓
+Project metadata is saved in private Puter KV
+        ↓
+AI generates a 3D-style render
+        ↓
+User compares, exports, shares, or unshares the project
+```
+
+## Important Files
+
+- `app/root.tsx` sets up the app layout and Puter authentication state.
+- `app/routes/home.tsx` shows the upload area and saved projects.
+- `app/routes/visualizer.$id.tsx` shows the image comparison and project actions.
+- `components/upload.tsx` handles image selection and upload progress.
+- `lib/ai.action.ts` calls Puter AI to generate the rendered image.
+- `lib/puter.action.ts` connects the frontend to the Puter worker.
+- `lib/puter.worker.js` handles project save, list, get, share, and unshare actions.
+
+## Notes
+
+The app needs a valid Puter account, a deployed Puter worker, and `VITE_PUTER_WORKER_URL` configured before project history, sharing, and AI workflows will work fully.
